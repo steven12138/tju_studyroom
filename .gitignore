@@ -1,0 +1,15 @@
+docker-compose.yml
+docker-compose-vpn.yml
+
+database/data
+
+.idea
+
+backend/.idea
+backend/.mvn
+
+backend/target
+
+**/__pycache__
+
+backend/.gitignore

@@ -1,0 +1,9 @@
+ddddocr
+requests
+BeautifulSoup4
+lxml
+tqdm
+sqlalchemy
+pymysql
+schedule
+argparse

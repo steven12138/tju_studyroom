@@ -1,0 +1,48 @@
+version: '3'
+services:
+  refresher:
+    image: study-room-refresher
+    build:
+      context: refresher
+    depends_on:
+      - mariadb
+      - backend
+    environment:
+      TZ: Asia/Shanghai
+      SQL_URL: studyroom-mariadb
+      SQL_PORT: 3306
+      DATABASE: studyroom
+      SQL_USER: studyroom
+      SQL_PASS: 123456
+      CLASSES_USER: "TJU STUDENT ID"
+      CLASSES_PASSWORD: "TJU CLASSES PASSWORD"
+      IMMEDIATE: 1
+      FETCH_DELTA: 1
+      COOLDOWN_TIME: 0.6
+  backend:
+    image: study-room-backend
+    depends_on:
+      - mariadb
+    build:
+      context: backend
+    ports:
+      - "8080:8080"
+    environment:
+      TZ: Asia/Shanghai
+  mariadb:
+    image: study-room-mariadb
+    build:
+      context: database
+    hostname: studyroom-mariadb
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./database/data:/var/lib/mysql # persist data
+    environment:
+      MYSQL_USER: studyroom
+      MYSQL_PASSWORD: 123456
+    # do not expose any ports to ensure security
+
+networks:
+  study-room:
+    driver: bridge
