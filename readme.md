@@ -6,7 +6,21 @@
 2. Fill your username and password into `docker-compose.yml`
 3. run `docker-compose build`, build the images
 4. run `docker-compose up -d`, start all containers.
+5. Nginx configuration [If you are using nginx as a reverse proxy service]  
+    Add this to `/etc/nginx/conf.d/studyroom.conf`
+    ```nginx
+    # /etc/nginx/conf.d/studyroom.conf
+    server {
+            listen 80;
+            server_name studyroom.subit.org.cn;
 
+            location / {
+                    proxy_pass http://localhost:8081;
+                    proxy_set_header HOST $host;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            }
+    }
+    ```
 
 ## Configuration Definitions
 
