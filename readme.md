@@ -10,7 +10,7 @@
 
 ## Configuration Definitions
 
-1. refresher configuration
+### 1. refresher configuration
 ```yaml
 TZ: Asia/Shanghai           # timezone of refresher, affect your scheduled task
 SQL_URL: studyroom-mariadb  # database url, modify this if you want to connect to custom database
@@ -25,16 +25,16 @@ FETCH_DELTA: 1              # fetch the data from [today - today + fetch_delta-1
 COOLDOWN_TIME: 0.6          # Cool down time after each request (due to classes speed limit)
 ```
 
-2. backend configuration
+### 2. backend configuration
 you may need to custom the port mapping of backend springboot server
 
-3. mariadb configuration
+### 3. mariadb configuration
 you may need to expose 3306-[host]port to access the database  
 all data is persist at `database/data` folder
 
-4. EasyConnect configuration
+### 4. EasyConnect configuration
 
-[reference](https://github.com/docker-easyconnect/docker-easyconnect)
+docker-easyconnect repository: [reference](https://github.com/docker-easyconnect/docker-easyconnect)
 
 thanks to project `docker-easyconnect`, you can now run this anywhere you want.  
 configure the `username` and `password` in `docker-compose-vpn-template.yml`
