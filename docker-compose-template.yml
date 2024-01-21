@@ -17,7 +17,7 @@ services:
       CLASSES_USER: "TJU STUDENT ID"
       CLASSES_PASSWORD: "TJU CLASSES PASSWORD"
       IMMEDIATE: 1
-      FETCH_DELTA: 1
+      FETCH_DELTA: 8
       COOLDOWN_TIME: 0.6
   backend:
     image: study-room-backend
