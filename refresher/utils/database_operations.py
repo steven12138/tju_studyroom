@@ -22,12 +22,20 @@ session = Session()
 
 
 def check_connection() -> None:
-    try:
-        session.execute(text('SELECT 1'))
-    except Exception as e:
-        print_flush("==> Connection Error")
-        print_flush(e)
-        raise
+    global session, Session
+    for i in range(3):
+        try:
+            session.execute(text('SELECT 1'))
+            return
+        except Exception as e:
+            print_flush("==> Connection Error")
+            print_flush(e)
+            print_flush("==> Refresh Connection Session, retrying:", i + 1, "/3")
+            Session = sessionmaker(bind=engine)
+            session = Session()
+
+    print_flush("==> Failed to connect to database")
+    raise
 
 
 def sync_campus(campuses: list[str]):
