@@ -22,7 +22,7 @@ session = Session()
 
 
 def check_connection() -> None:
-    global session, Session
+    global session, Session, engine
     for i in range(3):
         try:
             session.execute(text('SELECT 1'))
@@ -31,6 +31,8 @@ def check_connection() -> None:
             print_flush("==> Connection Error")
             print_flush(e)
             print_flush("==> Refresh Connection Session, retrying:", i + 1, "/3")
+            engine = create_engine(
+                f'mysql+pymysql://{database_user}:{database_password}@{database_url}:{database_port}/{database_name}')
             Session = sessionmaker(bind=engine)
             session = Session()
 
