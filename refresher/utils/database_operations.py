@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 from .sql_entity import Campus, Building, Room, Status
 from .util import print_flush
+from ..main import RED, RESET
 
 database_name = os.getenv("DATABASE", 'studyroom')
 database_user = os.getenv("SQL_USER", 'studyroom')
@@ -18,29 +19,29 @@ engine = create_engine(
     f'mysql+pymysql://{database_user}:{database_password}@{database_url}:{database_port}/{database_name}')
 
 Session = sessionmaker(bind=engine)
-session = Session()
 
 
 def check_connection() -> None:
-    global session, Session, engine
+    global Session, engine
     for i in range(3):
         try:
+            session = Session()
             session.execute(text('SELECT 1'))
             return
         except Exception as e:
-            print_flush("==> Connection Error")
+            print_flush(f"{RED}==> Connection Error{RESET}")
             print_flush(e)
             print_flush("==> Refresh Connection Session, retrying:", i + 1, "/3")
             engine = create_engine(
                 f'mysql+pymysql://{database_user}:{database_password}@{database_url}:{database_port}/{database_name}')
             Session = sessionmaker(bind=engine)
-            session = Session()
 
     print_flush("==> Failed to connect to database")
     raise
 
 
 def sync_campus(campuses: list[str]):
+    session = Session()
     existing_campuses = set(session.query(Campus.name).all())
 
     new_campuses = [Campus(name=name) for name in campuses if (name,) not in existing_campuses]
@@ -51,6 +52,7 @@ def sync_campus(campuses: list[str]):
 
 
 def sync_buildings(buildings: list[dict[str, str]]) -> None:
+    session = Session()
     existing_building_names = set(session.query(Building.name).all())
 
     campus_ids = {campus.name: campus.id for campus in session.query(Campus).all()}
@@ -72,6 +74,8 @@ def sync_buildings(buildings: list[dict[str, str]]) -> None:
 
 
 def sync_rooms(room_list: list[dict[str, str]]) -> None:
+    session = Session()
+
     exist_room_names = set(session.query(Room.name).all())
 
     building_ids = {building.name: building.id for building in session.query(Building).all()}
@@ -91,6 +95,7 @@ def sync_rooms(room_list: list[dict[str, str]]) -> None:
 
 
 def sync_date_status(date: datetime, status: list) -> None:
+    session = Session()
     rooms = {room.name: room for room in session.query(Room).all()}
 
     session.query(Status).filter_by(date=date.date()).delete()
@@ -109,6 +114,7 @@ def sync_date_status(date: datetime, status: list) -> None:
 
 
 def delete_previous_record(date: datetime) -> None:
+    session = Session()
     date = date.date()
     session.query(Status).filter(Status.date < date).delete()
     session.commit()

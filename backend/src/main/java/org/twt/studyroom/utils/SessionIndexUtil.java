@@ -30,25 +30,25 @@ public class SessionIndexUtil {
     static {
 
         periods.add(new ClassPeriod(LocalTime.of(8, 30), LocalTime.of(9, 15)));
-        periods.add(new ClassPeriod(LocalTime.of(9, 20), LocalTime.of(10, 5)));
+        periods.add(new ClassPeriod(LocalTime.of(9, 16), LocalTime.of(10, 5)));
 
-        periods.add(new ClassPeriod(LocalTime.of(10, 25), LocalTime.of(11, 10)));
-        periods.add(new ClassPeriod(LocalTime.of(11, 15), LocalTime.of(12, 0)));
+        periods.add(new ClassPeriod(LocalTime.of(10, 6), LocalTime.of(11, 10)));
+        periods.add(new ClassPeriod(LocalTime.of(11, 11), LocalTime.of(12, 0)));
         /*
             --- 午休 ---
         */
         periods.add(new ClassPeriod(LocalTime.of(13, 30), LocalTime.of(14, 15)));
-        periods.add(new ClassPeriod(LocalTime.of(14, 20), LocalTime.of(15, 5)));
+        periods.add(new ClassPeriod(LocalTime.of(14, 16), LocalTime.of(15, 5)));
 
-        periods.add(new ClassPeriod(LocalTime.of(15, 25), LocalTime.of(16, 10)));
-        periods.add(new ClassPeriod(LocalTime.of(16, 15), LocalTime.of(17, 0)));
+        periods.add(new ClassPeriod(LocalTime.of(15, 6), LocalTime.of(16, 10)));
+        periods.add(new ClassPeriod(LocalTime.of(16, 11), LocalTime.of(17, 0)));
         /*
             --- 晚餐 ---
         */
         periods.add(new ClassPeriod(LocalTime.of(18, 30), LocalTime.of(19, 15)));
-        periods.add(new ClassPeriod(LocalTime.of(19, 20), LocalTime.of(20, 5)));
-        periods.add(new ClassPeriod(LocalTime.of(20, 10), LocalTime.of(20, 55)));
-        periods.add(new ClassPeriod(LocalTime.of(21, 0), LocalTime.of(21, 45)));
+        periods.add(new ClassPeriod(LocalTime.of(19, 16), LocalTime.of(20, 5)));
+        periods.add(new ClassPeriod(LocalTime.of(20, 6), LocalTime.of(20, 55)));
+        periods.add(new ClassPeriod(LocalTime.of(20, 56), LocalTime.of(21, 45)));
     }
 
     public static int getCurrentSessionIndex() {
