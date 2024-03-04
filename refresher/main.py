@@ -8,21 +8,12 @@ from datetime import datetime, timedelta
 import schedule
 from tqdm import tqdm
 
-from utils.util import print_flush
+from utils.util import *
 from utils.database_operations import sync_campus, sync_buildings, sync_rooms, sync_status, check_connection, \
     delete_previous_record
 from utils.login import LoginLoader
 from utils.status_fetcher import StatusFetcher
 import re
-
-RED = '\033[91m'
-GREEN = '\033[92m'
-YELLOW = '\033[93m'
-BLUE = '\033[94m'
-MAGENTA = '\033[95m'
-CYAN = '\033[96m'
-WHITE = '\033[97m'
-RESET = '\033[0m'
 
 usr = os.getenv("CLASSES_USER")
 pwd = os.getenv("CLASSES_PASSWORD")

@@ -6,8 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from tqdm import tqdm
 
 from .sql_entity import Campus, Building, Room, Status
-from .util import print_flush
-from ..main import RED, RESET
+from .util import *
 
 database_name = os.getenv("DATABASE", 'studyroom')
 database_user = os.getenv("SQL_USER", 'studyroom')
