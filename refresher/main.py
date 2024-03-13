@@ -26,6 +26,7 @@ if os.getenv("HTTP_PROXY") is not None or os.getenv("HTTPS_PROXY") is not None:
     print_flush(f"{YELLOW}==> Wait 10s For EasyConnect-Docker To Start{RESET}")
     time.sleep(10)
 
+start_from_time = os.getenv("START_FROM")
 cooldown_time = float(os.getenv("COOLDOWN_TIME", 0.7))
 fetch_delta = int(os.getenv("FETCH_DELTA", 7))
 run_at = os.getenv("RUN_AT", "01:00")
@@ -76,7 +77,8 @@ def refresh_login_status() -> None:
 
 def refresh(retry=3) -> dict[datetime, list]:
     refresh_login_status()
-    now = datetime.now()
+    now = datetime.now() if start_from_time is None else (
+        datetime.strptime(start_from_time, "%Y-%m-%d %H:%M:%S %z %Z").replace(tzinfo=None))
     result = {}
     date_bar = tqdm(range(0, fetch_delta), unit="day")
     for shift in date_bar:
@@ -193,6 +195,13 @@ def retry_decorator(max_retries=3, delay_seconds=2):
     return decorator
 
 
+def sql_check():
+    print_flush("==> Checking Database Connection")
+    print_flush("Result.......    ", end='')
+    check_connection()
+    print_flush(f"{GREEN}[PASSED]{RESET}")
+
+
 @retry_decorator()
 def task() -> None:
     # logs
@@ -201,10 +210,7 @@ def task() -> None:
     print_flush("==> Current Date: ", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
     # database connection check
-    print_flush("==> Checking Database Connection")
-    print_flush("Result.......    ", end='')
-    check_connection()
-    print_flush(f"{GREEN}[PASSED]{RESET}")
+    sql_check()
 
     # refresh classroom info
     final_result = refresh()
@@ -213,9 +219,12 @@ def task() -> None:
     campus = unique_campus(final_result)
     buildings = unique_buildings(final_result)
     rooms = unique_room(final_result)
-    update_basic_info(campus, buildings, rooms)
-    delete_previous_record(datetime.now())
 
+    sql_check()
+
+    update_basic_info(campus, buildings, rooms)
+    delete_previous_record(datetime.now() if start_from_time is None else (
+        datetime.strptime(start_from_time, "%Y-%m-%d %H:%M:%S %z %Z").replace(tzinfo=None)))
     # sync status
     sync_status(final_result)
 
@@ -236,7 +245,7 @@ def main() -> None:
     print_flush("==> Task Will Run At 02:00 Every Day")
     print_flush("==> Checking Database Connection")
     print_flush("Result.......    ", end='')
-    check_connection()
+    sql_check()
     print_flush(f"{GREEN}[PASSED]{RESET}")
     print_flush(flush=True)
     schedule.every().day.at(run_at).do(task)

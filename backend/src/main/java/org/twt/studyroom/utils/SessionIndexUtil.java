@@ -29,7 +29,7 @@ public class SessionIndexUtil {
 
     static {
 
-        periods.add(new ClassPeriod(LocalTime.of(8, 30), LocalTime.of(9, 15)));
+        periods.add(new ClassPeriod(LocalTime.of(7, 0), LocalTime.of(9, 15)));
         periods.add(new ClassPeriod(LocalTime.of(9, 16), LocalTime.of(10, 5)));
 
         periods.add(new ClassPeriod(LocalTime.of(10, 6), LocalTime.of(11, 10)));
@@ -37,7 +37,7 @@ public class SessionIndexUtil {
         /*
             --- 午休 ---
         */
-        periods.add(new ClassPeriod(LocalTime.of(13, 30), LocalTime.of(14, 15)));
+        periods.add(new ClassPeriod(LocalTime.of(12, 1), LocalTime.of(14, 15)));
         periods.add(new ClassPeriod(LocalTime.of(14, 16), LocalTime.of(15, 5)));
 
         periods.add(new ClassPeriod(LocalTime.of(15, 6), LocalTime.of(16, 10)));
@@ -45,7 +45,7 @@ public class SessionIndexUtil {
         /*
             --- 晚餐 ---
         */
-        periods.add(new ClassPeriod(LocalTime.of(18, 30), LocalTime.of(19, 15)));
+        periods.add(new ClassPeriod(LocalTime.of(17, 1), LocalTime.of(19, 15)));
         periods.add(new ClassPeriod(LocalTime.of(19, 16), LocalTime.of(20, 5)));
         periods.add(new ClassPeriod(LocalTime.of(20, 6), LocalTime.of(20, 55)));
         periods.add(new ClassPeriod(LocalTime.of(20, 56), LocalTime.of(21, 45)));

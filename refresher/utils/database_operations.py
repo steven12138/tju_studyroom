@@ -48,6 +48,7 @@ def sync_campus(campuses: list[str]):
     if new_campuses:
         session.add_all(new_campuses)
         session.commit()
+    session.close()
 
 
 def sync_buildings(buildings: list[dict[str, str]]) -> None:
@@ -70,6 +71,7 @@ def sync_buildings(buildings: list[dict[str, str]]) -> None:
     if buildings_to_add:
         session.add_all(buildings_to_add)
         session.commit()
+    session.close()
 
 
 def sync_rooms(room_list: list[dict[str, str]]) -> None:
@@ -91,6 +93,7 @@ def sync_rooms(room_list: list[dict[str, str]]) -> None:
     if rooms_to_add:
         session.add_all(rooms_to_add)
         session.commit()
+    session.close()
 
 
 def sync_date_status(date: datetime, status: list) -> None:
@@ -98,6 +101,7 @@ def sync_date_status(date: datetime, status: list) -> None:
     rooms = {room.name: room for room in session.query(Room).all()}
 
     session.query(Status).filter_by(date=date.date()).delete()
+
     add_status = []
     for session_index, status in tqdm(enumerate(status)):
         session_index += 1
@@ -115,8 +119,10 @@ def sync_date_status(date: datetime, status: list) -> None:
 def delete_previous_record(date: datetime) -> None:
     session = Session()
     date = date.date()
-    session.query(Status).filter(Status.date < date).delete()
+    delete_num = session.query(Status).filter(Status.date < date).delete()
+    print_flush(f"==> Deleted {delete_num} previous data")
     session.commit()
+    session.close()
 
 
 def sync_status(status: dict[datetime, list]) -> None:
