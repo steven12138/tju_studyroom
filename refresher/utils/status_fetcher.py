@@ -24,7 +24,7 @@ class StatusFetcher:
         :param page_idx: Num of pages, usually in [1,20], integer
         :return raw_data, has_next?
         """
-        query_url = "http://classes.tju.edu.cn/eams/classroom/apply/free!search.action"
+        query_url = "https://classes.tju.edu.cn/eams/classroom/apply/free!search.action"
         data = {
             'seats': 1,
             'classroom.name': None,

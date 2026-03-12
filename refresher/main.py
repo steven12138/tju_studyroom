@@ -4,13 +4,14 @@ import sys
 import time
 import traceback
 from datetime import datetime, timedelta
+from functools import wraps
 
 import schedule
 from tqdm import tqdm
 
 from utils.util import *
 from utils.database_operations import sync_campus, sync_buildings, sync_rooms, sync_status, check_connection, \
-    delete_previous_record
+    delete_previous_record, ensure_schema
 from utils.login import LoginLoader
 from utils.status_fetcher import StatusFetcher
 import re
@@ -90,7 +91,7 @@ def refresh(retry=3) -> dict[datetime, list]:
                 raw_data = status_fetcher.fetch_date(date)
                 result[date] = raw_data
                 break
-            except BaseException as e:
+            except Exception as e:
                 if times == retry - 1:
                     print_flush(f"{RED}Reached Maximum Retries, Task Failed{RESET}")
                     raise
@@ -171,12 +172,15 @@ def mail_admin():
 
 def retry_decorator(max_retries=3, delay_seconds=2):
     def decorator(func):
+        @wraps(func)
         def wrapper(*args, **kwargs):
             retries = 0
+            last_error = None
             while retries < max_retries:
                 try:
                     return func(*args, **kwargs)
                 except Exception as e:
+                    last_error = e
                     print_flush()
                     print_flush(f"{RED}==> Exception Occurred: ", e, f"{RESET}")
                     traceback.print_exc()
@@ -189,6 +193,8 @@ def retry_decorator(max_retries=3, delay_seconds=2):
             print_flush(f"{RED}Reached Maximum Retries, Task Failed{RESET}")
             if should_mail_notify:
                 mail_admin()
+            if last_error is not None:
+                raise last_error
 
         return wrapper
 
@@ -199,6 +205,7 @@ def sql_check():
     print_flush("==> Checking Database Connection")
     print_flush("Result.......    ", end='')
     check_connection()
+    ensure_schema()
     print_flush(f"{GREEN}[PASSED]{RESET}")
 
 

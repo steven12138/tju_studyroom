@@ -8,6 +8,8 @@ from .des import strEnc
 
 
 class LoginLoader:
+    REQUEST_TIMEOUT = 15
+
     def __init__(self, usr: str, pwd: str) -> None:
         self.x = None
         self.usr = usr
@@ -22,11 +24,18 @@ class LoginLoader:
             "Referer": "http://sso.tju.edu.cn/cas/login?service=http%3A%2F%2Fzhjw.tju.edu.cn%2Flogin.jsp",
         }
 
+    @staticmethod
+    def _ensure_login_success(response: requests.Response) -> None:
+        soup = BeautifulSoup(response.text, "lxml")
+        if "cas/login" in response.url or soup.find(id="loginForm") is not None:
+            raise Exception("Login failed, redirected back to CAS login page")
+
     def login(self) -> requests.session:
         self.x = requests.session()
 
         captcha = CaptchaHandler(session=self.x).get_final_captcha()
-        res = self.x.get(self.login_url, headers=self.headers)
+        res = self.x.get(self.login_url, headers=self.headers, timeout=self.REQUEST_TIMEOUT)
+        res.raise_for_status()
         soup = BeautifulSoup(res.text, "lxml")
 
         lt = soup.find(id="lt").get("value")
@@ -38,7 +47,7 @@ class LoginLoader:
 
         rsa = strEnc(self.usr + self.pwd + lt, "1", "2", "3")
 
-        self.x.post(self.login_url, headers=self.headers, data={
+        login_response = self.x.post(self.login_url, headers=self.headers, data={
             "code": captcha,
             "rsa": rsa,
             "ul": len(self.usr),
@@ -46,7 +55,15 @@ class LoginLoader:
             "lt": lt,
             "execution": execution,
             "_eventId": "submit",
-        })
-        self.x.get("http://classes.tju.edu.cn/eams/homeExt.action", headers=self.headers)
+        }, timeout=self.REQUEST_TIMEOUT)
+        login_response.raise_for_status()
+        home_response = self.x.get(
+            "https://classes.tju.edu.cn/eams/homeExt.action",
+            headers=self.headers,
+            timeout=self.REQUEST_TIMEOUT,
+        )
+        home_response.raise_for_status()
+        self._ensure_login_success(home_response)
         time.sleep(1)
+
         return self.x

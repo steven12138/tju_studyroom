@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from tqdm import tqdm
 
-from .sql_entity import Campus, Building, Room, Status
+from .sql_entity import Base, Campus, Building, Room, Status
 from .util import *
 
 database_name = os.getenv("DATABASE", 'studyroom')
@@ -22,12 +22,15 @@ Session = sessionmaker(bind=engine)
 
 def check_connection() -> None:
     global Session, engine
+    last_error = None
     for i in range(3):
         try:
             session = Session()
             session.execute(text('SELECT 1'))
+            session.close()
             return
         except Exception as e:
+            last_error = e
             print_flush(f"{RED}==> Connection Error{RESET}")
             print_flush(e)
             print_flush("==> Refresh Connection Session, retrying:", i + 1, "/3")
@@ -36,93 +39,148 @@ def check_connection() -> None:
             Session = sessionmaker(bind=engine)
 
     print_flush("==> Failed to connect to database")
-    raise
+    raise last_error
+
+
+def ensure_schema() -> None:
+    Base.metadata.create_all(engine)
 
 
 def sync_campus(campuses: list[str]):
     session = Session()
-    existing_campuses = set(session.query(Campus.name).all())
+    try:
+        existing_campuses = set(session.query(Campus.name).all())
+        new_campuses = [Campus(name=name) for name in campuses if (name,) not in existing_campuses]
 
-    new_campuses = [Campus(name=name) for name in campuses if (name,) not in existing_campuses]
-
-    if new_campuses:
-        session.add_all(new_campuses)
-        session.commit()
-    session.close()
+        if new_campuses:
+            session.add_all(new_campuses)
+            session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 def sync_buildings(buildings: list[dict[str, str]]) -> None:
     session = Session()
-    existing_building_names = set(session.query(Building.name).all())
+    try:
+        existing_buildings = {
+            (building.campus_id, building.name)
+            for building in session.query(Building).all()
+        }
+        campus_ids = {campus.name: campus.id for campus in session.query(Campus).all()}
 
-    campus_ids = {campus.name: campus.id for campus in session.query(Campus).all()}
+        buildings_to_add = []
+        for building in buildings:
+            campus_id = campus_ids.get(building['campus'])
+            if campus_id is None:
+                raise ValueError("Unexpected campus name: " + building['campus'])
 
-    new_buildings = [b for b in buildings if (b['name'],) not in existing_building_names]
+            building_key = (campus_id, building['name'])
+            if building_key in existing_buildings:
+                continue
 
-    buildings_to_add = []
-    for building in new_buildings:
-        campus_id = campus_ids.get(building['campus'])
-        if campus_id:
             buildings_to_add.append(Building(name=building['name'], campus_id=campus_id))
-        else:
-            # TODO: log error
-            assert False, "Unexpected campus name: " + building['campus']
+            existing_buildings.add(building_key)
 
-    if buildings_to_add:
-        session.add_all(buildings_to_add)
-        session.commit()
-    session.close()
+        if buildings_to_add:
+            session.add_all(buildings_to_add)
+            session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 def sync_rooms(room_list: list[dict[str, str]]) -> None:
     session = Session()
+    try:
+        existing_rooms = {
+            (room.building_id, room.name)
+            for room in session.query(Room).all()
+        }
+        building_ids = {
+            (campus_name, building_name): building_id
+            for building_id, building_name, campus_name in session.query(
+                Building.id,
+                Building.name,
+                Campus.name,
+            ).join(Campus, Building.campus_id == Campus.id).all()
+        }
 
-    exist_room_names = set(session.query(Room.name).all())
+        rooms_to_add = []
+        for room in room_list:
+            building_id = building_ids.get((room['campus'], room['building']))
+            if building_id is None:
+                raise ValueError(
+                    f"Unexpected building name: campus={room['campus']} building={room['building']}"
+                )
 
-    building_ids = {building.name: building.id for building in session.query(Building).all()}
+            room_key = (building_id, room['name'])
+            if room_key in existing_rooms:
+                continue
 
-    new_rooms = [r for r in room_list if (r['name'],) not in exist_room_names]
-    rooms_to_add = []
-    for room in new_rooms:
-        building_id = building_ids.get(room['building'])
-        if building_id:
             rooms_to_add.append(Room(name=room['name'], building_id=building_id))
-        else:
-            assert False, "Unexpected building name: " + room['building']
+            existing_rooms.add(room_key)
 
-    if rooms_to_add:
-        session.add_all(rooms_to_add)
-        session.commit()
-    session.close()
+        if rooms_to_add:
+            session.add_all(rooms_to_add)
+            session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 def sync_date_status(date: datetime, status: list) -> None:
     session = Session()
-    rooms = {room.name: room for room in session.query(Room).all()}
+    try:
+        rooms = {
+            (building_name, room_name): room_id
+            for room_id, room_name, building_name in session.query(
+                Room.id,
+                Room.name,
+                Building.name,
+            ).join(Building, Room.building_id == Building.id).all()
+        }
 
-    session.query(Status).filter_by(date=date.date()).delete()
+        session.query(Status).filter_by(date=date.date()).delete()
 
-    add_status = []
-    for session_index, status in tqdm(enumerate(status)):
-        session_index += 1
-        for room in status:
-            room = rooms.get(room['room'])
-            if room:
-                add_status.append(Status(room_id=room.id, date=date, session_index=session_index))
-            else:
-                assert False, "Unexpected room name: " + room['room']
+        add_status = []
+        for session_index, status in tqdm(enumerate(status)):
+            session_index += 1
+            for room in status:
+                room_id = rooms.get((room['building'], room['room']))
+                if room_id is None:
+                    raise ValueError(
+                        f"Unexpected room name: building={room['building']} room={room['room']}"
+                    )
+                add_status.append(Status(room_id=room_id, date=date, session_index=session_index))
 
-    session.add_all(add_status)
-    session.commit()
+        session.add_all(add_status)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 def delete_previous_record(date: datetime) -> None:
     session = Session()
-    date = date.date()
-    delete_num = session.query(Status).filter(Status.date < date).delete()
-    print_flush(f"==> Deleted {delete_num} previous data")
-    session.commit()
-    session.close()
+    try:
+        date = date.date()
+        delete_num = session.query(Status).filter(Status.date < date).delete()
+        print_flush(f"==> Deleted {delete_num} previous data")
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 def sync_status(status: dict[datetime, list]) -> None:
