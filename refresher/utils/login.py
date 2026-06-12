@@ -56,7 +56,6 @@ class LoginLoader:
             "execution": execution,
             "_eventId": "submit",
         }, timeout=self.REQUEST_TIMEOUT)
-        login_response.raise_for_status()
         home_response = self.x.get(
             "https://classes.tju.edu.cn/eams/homeExt.action",
             headers=self.headers,
