@@ -62,7 +62,6 @@ class LoginLoader:
             headers=self.headers,
             timeout=self.REQUEST_TIMEOUT,
         )
-        home_response.raise_for_status()
         self._ensure_login_success(home_response)
         time.sleep(1)
 
