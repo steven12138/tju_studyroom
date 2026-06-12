@@ -12,10 +12,22 @@ class StatusFetcher:
     def __init__(self, session: requests.session, wait_time=0.7):
         self.wait_time = wait_time
         self.x = session
+        self.form_url = "https://classes.tju.edu.cn/eams/classroom/apply/free.action"
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76",
             "Referer": "https://sso.tju.edu.cn/cas/login?service=http%3A%2F%2Fzhjw.tju.edu.cn%2Flogin.jsp",
         }
+        self._init_session()
+
+    def _init_session(self):
+        resp = self.x.get(self.form_url, headers=self.headers)
+        self.headers["Referer"] = self.form_url
+        soup = BeautifulSoup(resp.content, 'lxml')
+        campus_select = soup.select_one("select[name='classroom.campus.id']")
+        if campus_select:
+            self.campus_list = [o.text.strip() for o in campus_select.select("option") if o.get("value")]
+        else:
+            self.campus_list = []
 
     def fetch_single_page(self, date: datetime, idx: int, page_idx: int) -> (list, bool):
         """
@@ -54,8 +66,10 @@ class StatusFetcher:
             values = list(map(lambda e: e.text, row.select("td")))
             if len(values) != 6:
                 return [], False
-            if values[1] == "" or values[2] == "" or values[3] == "":
+            if values[1] == "" or values[3] == "":
                 continue
+            if values[2] == "":
+                values[2] = values[3]
             raw_data.append({
                 'campus': values[3],
                 'building': values[2],
