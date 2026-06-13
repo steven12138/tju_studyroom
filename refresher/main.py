@@ -106,14 +106,15 @@ def refresh(retry=3) -> dict[datetime, list]:
 
 
 def unique_buildings(result: dict[datetime, list]) -> list[dict[str, str]]:
-    buildings = []
+    buildings = set()
     building_info: list[dict[str, str]] = []
     for date, data in result.items():
         for status in data:
             for item in status:
                 # print_flush(item)
-                if item["building"] not in buildings:
-                    buildings.append(item["building"])
+                key = (item['campus'], item['building'])
+                if key not in buildings:
+                    buildings.add(key)
                     building_info.append({
                         'name': item['building'],
                         'campus': item['campus'],
@@ -132,16 +133,18 @@ def unique_campus(result: dict[datetime, list]) -> list[str]:
 
 
 def unique_room(result: dict[datetime, list]) -> list[dict[str, str]]:
-    room = []
+    room = set()
     room_info: list[dict[str, str]] = []
     for date, data in result.items():
         for status in data:
             for item in status:
-                if item["room"] not in room:
-                    room.append(item["room"])
+                key = (item['campus'], item['building'], item['room'])
+                if key not in room:
+                    room.add(key)
                     room_info.append({
                         'name': item['room'],
                         'building': item['building'],
+                        'campus': item['campus'],
                     })
     return room_info
 
